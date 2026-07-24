@@ -8,6 +8,7 @@ let currentTurn = 1;
 let boardPieces = [[-2,-1,0,0,0,0,1,2],[-3,-1,0,0,0,0,1,3],[-5,-1,0,0,0,0,1,5],[-7,-1,0,0,0,0,1,7],[-11,-1,0,0,0,0,1,11],[-5,-1,0,0,0,0,1,5],[-3,-1,0,0,0,0,1,3],[-2,-1,0,0,0,0,1,2]];
 let boardStates = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]];
 let selectedLocation = [];
+let computer = false;
 // i'm thinking negative numbers represent the opponent's pieces and positive numbers represent your pieces
 const boardDark = new Image();
 boardDark.src = 'img/tiledk.png';
@@ -31,12 +32,53 @@ function isValidMove(starti, startj, endi, endj) {
   }
 }
 
+function isValidSelection(i, j) {
+  if (boardPieces[i][j] * currentTurn > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function findallValidMoves() {
+  let toret = [];
+  for (let i = 0; i < 8; i++) {
+    for (let j = 0; j < 8; j++) {
+      if (isValidSelection(i, j)) {
+        for (let k = 0; k < 8; k++) {
+          for (let l = 0; l < 8; l++) {
+            if (isValidMove(i, j, k, l)) {
+              toret.push([i, j, k, l]);
+            }
+          }
+        }
+      }
+    }
+  }
+  return toret;
+}
+
+function beforemovesteps() {
+  boardStates = boardStates.map(ah => ah.map(n => (n > 0 ? n-1 : n)));
+  if (computer && (currentTurn == -1)) {
+    let h = findallValidMoves();
+    if (h.length == 0) {
+      declareLoss();
+    } else {
+      let q = h[Math.floor(Math.random() * h.length)]; // random move
+      makeMove(...q);
+      drawBoard();
+    }
+  }
+}
+
 function makeMove(starti, startj, endi, endj) {
   boardStates[starti][startj] = 2 * discreteLog(boardPieces[starti][startj], 2);
   boardPieces[endi][endj] = boardPieces[starti][startj] - boardPieces[endi][endj];
   boardPieces[starti][startj] = 0;
   currentTurn = currentTurn * -1;
-  boardStates = boardStates.map(ah => ah.map(n => (n > 0 ? n-1 : n)));
+  beforemovesteps();
+  if (findallValidMoves().length == 0) {declareLoss();}
 }
 
 function discreteLog(number, prime) { // How many times can the number be divided by the prime?
@@ -50,14 +92,15 @@ function discreteLog(number, prime) { // How many times can the number be divide
 function getDescription(number) {
   let Q = number;
   let toret = '';
-  for (let l = 2; l <= Math.abs(number); l++) {
-    if (number % l == 0) {
-      toret += getPrimeDescription(number, l, discreteLog(number, l));
-      number /= l ** discreteLog(number, l);
+  for (let l = 2; l * l <= Math.abs(Q); l++) {
+    if (Q % l == 0) {
+      toret += getPrimeDescription(Q, l, discreteLog(Q, l));
+      Q /= l ** discreteLog(Q, l);
     }
   }
+  if (Q > 1) {toret += getPrimeDescription(number, Q, 1);}
   if (toret == '') {
-    toret = "Base stone. Doesn't do anything."
+    toret = "Base piece. Doesn't do anything."
   }
   return toret;
 }
