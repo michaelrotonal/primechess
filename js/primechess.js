@@ -5,6 +5,8 @@
 
 let canvas, context;
 
+let theBoard = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]];
+
 const boardDark = new Image();
 boardDark.src = 'img/tiledk.png';
 
@@ -59,17 +61,14 @@ function drawBoard() {
     for(let j = 0; j < 8; j++) {
       if( (i + j) % 2 == 0) {
         context.drawImage(boardDark, i*tile, j*tile, tile, tile); 
+      } else {
+        context.drawImage(boardLight, i*tile, j*tile, tile, tile);
+      }
+      if(theBoard[i][j] != 0) {
+        // uh. draw the piece number theBoard[i][j]
       }
     }
-  }
-
-  for(let i = 0; i < 8; i++) {
-    for(let j = 0; j < 8; j++) {
-      if( (i + j) % 2 == 1) {
-        context.drawImage(boardLight, i*tile, j*tile, tile, tile); 
-      }
-    }
-  }    
+  }  
 }
 
 document.addEventListener("DOMContentLoaded", function() {
