@@ -4,18 +4,80 @@
 //   Local Multi / AI switch 
 
 let canvas, context;
-
-let theBoard = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]];
-
+let currentTurn = 1;
+let boardPieces = [[-2,-1,0,0,0,0,1,2],[-3,-1,0,0,0,0,1,3],[-5,-1,0,0,0,0,1,5],[-7,-1,0,0,0,0,1,7],[-11,-1,0,0,0,0,1,11],[-5,-1,0,0,0,0,1,5],[-3,-1,0,0,0,0,1,3],[-2,-1,0,0,0,0,1,2]];
+let boardStates = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]];
+let selectedLocation = [];
+// i'm thinking negative numbers represent the opponent's pieces and positive numbers represent your pieces
 const boardDark = new Image();
 boardDark.src = 'img/tiledk.png';
 
 const boardLight = new Image();
 boardLight.src = 'img/tilelt.png'; 
 
+function isValidMove(starti, startj, endi, endj) {
+  if (Math.abs(starti - endi) + Math.abs(startj - endj) == 1) {
+    if ((boardPieces[endi][endj] * boardPieces[starti][startj]) > 0) {
+      return false;
+    } else {
+      if (boardStates[endi][endj] > 0) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+  } else {
+    return false;
+  }
+}
+
+function makeMove(starti, startj, endi, endj) {
+  boardStates[starti][startj] = 2 * discreteLog(boardPieces[starti][startj], 2);
+  boardPieces[endi][endj] = boardPieces[starti][startj] - boardPieces[endi][endj];
+  boardPieces[starti][startj] = 0;
+  currentTurn = currentTurn * -1;
+  boardStates = boardStates.map(ah => ah.map(n => (n > 0 ? n-1 : n)));
+}
+
+function discreteLog(number, prime) { // How many times can the number be divided by the prime?
+  let i = 0;
+  while (number % prime ** (i + 1) == 0) {
+    i++;
+  }
+  return i;
+}
+
+function getDescription(number) {
+  let Q = number;
+  let toret = '';
+  for (let l = 2; l <= Math.abs(number); l++) {
+    if (number % l == 0) {
+      toret += getPrimeDescription(number, l, discreteLog(number, l));
+      number /= l ** discreteLog(number, l);
+    }
+  }
+  if (toret == '') {
+    toret = "Base stone. Doesn't do anything."
+  }
+  return toret;
+}
+
+function getPrimeDescription(number, prime, power) {
+  switch (prime) {
+    case 2:
+      return 'Turns the square it left unusable for ' + power + " of your opponent's turns. ";
+    default:
+      if (power == 1) {
+        return 'Has a useless factor of ' + prime + '. ';
+      } else {
+        return 'Has ' + power + ' useless factors of ' + prime + '. ';
+      }
+  }
+}
+
 function clickedBoard(e) {
   context.clearRect(0,0,canvas.width, canvas.height);
-  drawBoard(); 
+ 
 
   let x = e.offsetX;
   let y = e.offsetY; 
@@ -26,15 +88,42 @@ function clickedBoard(e) {
 
   let selectedOutline = "#114466";
   let selectedInterior = "#55aacc22";
-  drawSquare(i, j, selectedOutline, selectedInterior);
 
   let greenOutline = "#005511";
   let greenInterior = "#00ff0011"; 
 
-  drawSquare(i+1, j, greenOutline, greenInterior);
-  drawSquare(i-1, j, greenOutline, greenInterior);
-  drawSquare(i, j+1, greenOutline, greenInterior);
-  drawSquare(i, j-1, greenOutline, greenInterior);
+  if (selectedLocation == []) {
+    if (boardPieces[i][j] * currentTurn > 0) {
+      selectedLocation = [i, j];
+    } else {
+      selectedLocation = [];
+    }
+  } else {
+    if (isValidMove(selectedLocation[0], selectedLocation[1], i, j)) {
+      makeMove(selectedLocation[0], selectedLocation[1], i, j);
+      selectedLocation = [];
+    } else {
+      if (boardPieces[i][j] * currentTurn > 0 && (i != selectedLocation[0] || j != selectedLocation[1])) {
+        selectedLocation = [i, j];
+      } else {
+        selectedLocation = [];
+      }
+    }
+  }
+
+  drawBoard();
+
+  if (selectedLocation.length == 2) {
+    drawSquare(selectedLocation[0], selectedLocation[1], selectedOutline, selectedInterior);
+    document.getElementById("upperPanel").innerHTML = getDescription(boardPieces[selectedLocation[0]][selectedLocation[1]]);
+    for (let ii = 0; ii < 8; ii++) {
+      for (let jj = 0; jj < 8; jj++) {
+        if (isValidMove(selectedLocation[0], selectedLocation[1], ii, jj)) {
+          drawSquare(ii, jj, greenOutline, greenInterior)
+        }
+      }
+    }
+  }
 }
 
 function drawSquare(i, j, strokeStyle, fillStyle) {
@@ -64,8 +153,14 @@ function drawBoard() {
       } else {
         context.drawImage(boardLight, i*tile, j*tile, tile, tile);
       }
-      if(theBoard[i][j] != 0) {
-        // uh. draw the piece number theBoard[i][j]
+      if(boardStates[i][j] != 0) {
+        drawSquare(i, j, '#FFE40000', '#FFE40022')
+      }
+      if(boardPieces[i][j] != 0) {
+        context.textAlign = "center";
+        context.fillStyle = (boardPieces[i][j] > 0) ? 'white' : 'black'
+        context.font = tile / 3 + "px sans-serif"
+        context.fillText(Math.abs(boardPieces[i][j]) + '', (i+0.5)*tile, (j+0.5)*tile);
       }
     }
   }  
