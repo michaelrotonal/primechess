@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>P R I M E C H E S S</title>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      background: black;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size:  1.0rem; 
+      line-height: 1.6;
+      font-weight: 100;
+      font-family: Helvetica, Arial, sans-serif;
+      color: #DDD;
+    }
+
+    h1 {
+      font-size: 3.0rem;
+      letter-spacing: 0.6rem;
+    }
+
+    #gameArea {      
+      display: flex;
+      flex-direction: row;
+    }
+
+    .outerPanel {
+      border: 2px double #aaa;
+      border-radius: 0.5rem;
+      margin: 0.5rem;
+    }
+
+    #leftPanel {
+      max-width: 60%;
+      min-width: 680px;
+    }
+
+    #boardArea {
+      height: 600px;
+      padding: 1.0rem;
+    }
+
+    #upperPanel {
+      height: 44%;
+      padding: 1.0rem;
+    }
+
+    #lowerPanel {
+      height: 44%;
+      padding: 1.0rem;
+    }
+
+    #console {      
+      padding: 1.0rem;
+    }
+  </style>
+
+  <script type="module" src="./js/primechess.js"></script> 
+</head>
+<body>
+<H1>PRIMECHESS</H1>
+<div id="gameArea">
+  <div class="outerPanel"  id="leftPanel">
+    <div class="outerPanel" id="boardArea"><canvas id="gameBoard" width="600" height="600"></canvas></div>
+    <div class="outerPanel" id="console"><p id="consoleText">You sunk my battleship!</p></div>
+  </div>
+  <div class="outerPanel"  id="rightPanel">
+    <div class="outerPanel" id="upperPanel"><p id="upperPanel">A perfectly ordinary 2.</p> </div>
+    <div class="outerPanel" id="lowerPanel"><p>A board square like any other.</p></div>
+  </div>
+</div>
+</body>
+</html>
