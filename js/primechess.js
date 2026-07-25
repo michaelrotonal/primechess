@@ -17,14 +17,18 @@ const boardLight = new Image();
 boardLight.src = 'img/tilelt.png'; 
 
 function isValidMove(starti, startj, endi, endj) {
-  if (Math.abs(starti - endi) + Math.abs(startj - endj) == 1) {
+  if (starti == endi || startj == endj) {
     if ((boardPieces[endi][endj] * boardPieces[starti][startj]) > 0) {
       return false;
     } else {
       if (boardStates[endi][endj] > 0) {
         return false;
       } else {
-        return true;
+        if (Math.abs(starti - endi) + Math.abs(startj - endj) < 2 + discreteLog(boardPieces[starti][startj], 3)) {
+          return true
+        } else {
+          return false
+        }
       }
     }
   } else {
@@ -73,12 +77,19 @@ function beforemovesteps() {
 }
 
 function makeMove(starti, startj, endi, endj) {
-  boardStates[starti][startj] = 2 * discreteLog(boardPieces[starti][startj], 2);
-  boardPieces[endi][endj] = boardPieces[starti][startj] - boardPieces[endi][endj];
-  boardPieces[starti][startj] = 0;
+  let startNumber = boardPieces[starti][startj]; 
+  let endNumber = boardPieces[endi][endj];
+  boardStates[starti][startj] = 2 * discreteLog(startNumber, 2);
+  boardPieces[endi][endj] = startNumber - boardPieces[endi][endj];
+  boardPieces[starti][startj] = -endNumber * discreteLog(startNumber, 5);
+  boardPieces[endi][endj] += discreteLog(startNumber, 7) * Math.sign(startNumber);
   currentTurn = currentTurn * -1;
   beforemovesteps();
   if (findallValidMoves().length == 0) {declareLoss();}
+}
+
+function declareLoss() {
+  // uh. figure this out
 }
 
 function discreteLog(number, prime) { // How many times can the number be divided by the prime?
@@ -98,7 +109,7 @@ function getDescription(number) {
       Q /= l ** discreteLog(Q, l);
     }
   }
-  if (Q > 1) {toret += getPrimeDescription(number, Q, 1);}
+  if (Math.abs(Q) > 1) {toret += getPrimeDescription(Math.abs(number), Math.abs(Q), 1);}
   if (toret == '') {
     toret = "Base piece. Doesn't do anything."
   }
@@ -109,6 +120,12 @@ function getPrimeDescription(number, prime, power) {
   switch (prime) {
     case 2:
       return 'Turns the square it left unusable for ' + power + " of your opponent's turns. ";
+    case 7:
+      return 'Increases by ' + power + ' after moving. ';
+    case 5:
+      return 'Leaves behind a clone of any piece it captures. ';
+    case 3:
+      return 'Can move up to ' + power + ' additional squares. ';
     default:
       if (power == 1) {
         return 'Has a useless factor of ' + prime + '. ';
