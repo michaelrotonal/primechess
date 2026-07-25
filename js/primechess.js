@@ -25,9 +25,13 @@ function isValidMove(starti, startj, endi, endj) {
         return false;
       } else {
         if (Math.abs(starti - endi) + Math.abs(startj - endj) < 2 + discreteLog(boardPieces[starti][startj], 3)) {
-          return true
+          if ((boardPieces[endi][endj] == 0) || (discreteLog(boardPieces[starti][startj], 5) >= discreteLog(boardPieces[endi][endj], 5))) {
+            return true;
+          } else {
+            return false;
+          }
         } else {
-          return false
+          return false;
         }
       }
     }
@@ -81,8 +85,8 @@ function makeMove(starti, startj, endi, endj) {
   let endNumber = boardPieces[endi][endj];
   boardStates[starti][startj] = 2 * discreteLog(startNumber, 2);
   boardPieces[endi][endj] = startNumber - boardPieces[endi][endj];
-  boardPieces[starti][startj] = -endNumber * discreteLog(startNumber, 5);
-  boardPieces[endi][endj] += discreteLog(startNumber, 7) * Math.sign(startNumber);
+  boardPieces[starti][startj] = -endNumber * discreteLog(startNumber, 7);
+  boardPieces[endi][endj] += discreteLog(startNumber, 11) * Math.sign(startNumber);
   currentTurn = currentTurn * -1;
   beforemovesteps();
   if (findallValidMoves().length == 0) {declareLoss();}
@@ -93,11 +97,15 @@ function declareLoss() {
 }
 
 function discreteLog(number, prime) { // How many times can the number be divided by the prime?
-  let i = 0;
-  while (number % prime ** (i + 1) == 0) {
-    i++;
+  if (number == 0) {
+    return Infinity; // If you ever get a piece that is worth zero, Good Luck.
+  } else {
+    let i = 0;
+    while (number % prime ** (i + 1) == 0) {
+      i++;
+    }
+    return i;
   }
-  return i;
 }
 
 function getDescription(number) {
@@ -120,12 +128,14 @@ function getPrimeDescription(number, prime, power) {
   switch (prime) {
     case 2:
       return 'Turns the square it left unusable for ' + power + " of your opponent's turns. ";
-    case 7:
+    case 11:
       return 'Increases by ' + power + ' after moving. ';
-    case 5:
+    case 7:
       return 'Leaves behind a clone of any piece it captures. ';
     case 3:
       return 'Can move up to ' + power + ' additional squares. ';
+    case 5:
+      return 'Cannot be captured by a piece with fewer than ' + power + ' factors of 5. '
     default:
       if (power == 1) {
         return 'Has a useless factor of ' + prime + '. ';
