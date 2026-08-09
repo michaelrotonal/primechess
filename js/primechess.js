@@ -19,7 +19,7 @@ function resetGame() {
  boardPieces = [[-2,-1,0,0,0,0,1,2],[-3,-1,0,0,0,0,1,3],[-5,-1,0,0,0,0,1,5],[-7,-1,0,0,0,0,1,7],[-11,-1,0,0,0,0,1,11],[-5,-1,0,0,0,0,1,5],[-3,-1,0,0,0,0,1,3],[-2,-1,0,0,0,0,1,2]];
  boardStates = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]];
  selectedLocation = [];
- let P = [2,3,5,7,11,13];
+ let P = [2,3,5,7,11,13,17];
  if (chaosmode) {
   P = toShuffled(P);
  }
@@ -29,8 +29,10 @@ function resetGame() {
   uncable: P[2], // uncapturable
   cloner: P[3],
   increment: P[4],
-  rounder: P[5]
+  rounder: P[5],
+  timeser: P[6]
  }
+ document.getElementById('consolePanel').innerHTML = 'Another game has started.'
  drawBoard();
 }
 
@@ -120,7 +122,11 @@ function makeMove(starti, startj, endi, endj) {
   let startNumber = boardPieces[starti][startj]; 
   let endNumber = boardPieces[endi][endj];
   boardStates[starti][startj] = 2 * discreteLog(startNumber, primes.yellower);
-  boardPieces[endi][endj] = startNumber - boardPieces[endi][endj];
+  if (startNumber % primes.timeser == 0 && boardPieces[endi][endj] != 0) {
+    boardPieces[endi][endj] = startNumber * Math.abs(boardPieces[endi][endj]);
+  } else {
+    boardPieces[endi][endj] = startNumber - boardPieces[endi][endj];
+  }
   boardPieces[starti][startj] = -endNumber * discreteLog(startNumber, primes.cloner);
   boardPieces[endi][endj] += discreteLog(startNumber, primes.increment) * Math.sign(startNumber);
   boardPieces[endi][endj] = Math.ceil(Math.abs(boardPieces[endi][endj]) / (primes.rounder ** discreteLog(startNumber, primes.rounder))) * (primes.rounder ** discreteLog(startNumber, primes.rounder)) * Math.sign(startNumber);
@@ -130,7 +136,7 @@ function makeMove(starti, startj, endi, endj) {
 }
 
 function declareLoss() {
-  // uh. figure this out
+  document.getElementById('consolePanel').innerHTML = (currentTurn == 1 ? 'Black wins!' : 'White wins!')
 }
 
 function discreteLog(number, prime) { // How many times can the number be divided by the prime?
@@ -175,6 +181,8 @@ function getPrimeDescription(number, prime, power) {
       return 'Cannot be captured by a piece with fewer than ' + power + ' factors of ' + primes.uncable + '. '
     case primes.rounder:
       return 'Rounds up to the nearest multiple of ' + prime ** power + ' after moving. '
+    case primes.timeser:
+      return 'When capturing, multiplies by the piece it takes instead of adding. '
     default:
       if (power == 1) {
         return 'Has a useless factor of ' + prime + '. ';
