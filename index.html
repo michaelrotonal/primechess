@@ -68,6 +68,21 @@
 </head>
 <body>
 <H1>PRIMECHESS</H1>
+<dialog id="settingsDialog">
+  <div>
+    <table>
+      <tr>
+        <td> AI Player </td>
+        <td>
+          <input type="checkbox" id="computerPlays">
+        </td>
+      </tr>
+      <tr>
+        <td> Chaos Mode </td><td><input type="checkbox" id="chaosMode"></td>
+    </table>
+    <button id="unsettingsButton">Save</button>
+  </div>
+</dialog>
 <div id="gameArea">
   <div class="outerOuterPanel"  id="leftPanel">
     <div class="outerPanel" id="boardArea">
@@ -80,6 +95,9 @@
     <div class="outerPanel" id="upperPanel"><p id="upperPanel">A perfectly ordinary 2.</p> </div>
     <div class="outerPanel" id="lowerPanel"><p>A board square like any other.</p></div>
   </div>
+</div>
+<div id="settingsButtons">
+  <button id="settingsButton">Settings</button>
 </div>
 </body>
 </html>
