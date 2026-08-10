@@ -33,7 +33,6 @@ function resetGame() {
   timeser: P[6]
  }
  document.getElementById('consolePanel').innerHTML = 'Another game has started.'
- beforemovesteps();
  computermovesteps();
 }
 
@@ -105,20 +104,25 @@ function findallValidMoves(playfield, playstates, turn) {
   return toret;
 }
 
-function beforemovesteps() {
-  boardStates = boardStates.map(ah => ah.map(n => (n > 0 ? n-1 : n)));
-}
-
 function computermovesteps() {
   if (computer && (currentTurn == -1)) {
     let h = findallValidMoves(boardPieces, boardStates, currentTurn);;
     if (h.length == 0) {
       declareLoss();
     } else {
-      let q = h[Math.floor(Math.random() * h.length)]; // random move
-      [boardPieces, boardStates] = makeMove(boardPieces, boardStates, ...q);
+      let minmovescount = Infinity;
+      let minmovesmove;
+      let X = toShuffled(h);
+      for (let i = 0; i < h.length; i++) {
+        let q = X[i]; // random move
+        let t = findallValidMoves(...makeMove(boardPieces, boardStates, ...q), -currentTurn).length; // number of moves for you. sorry this computer actually knows what it's doing a little bit
+        if (t < minmovescount) {
+          minmovesmove = q;
+          minmovescount = t;
+        }
+      }
+      [boardPieces, boardStates] = makeMove(boardPieces, boardStates, ...minmovesmove);
       currentTurn = currentTurn * -1;
-      beforemovesteps();
       if (findallValidMoves(boardPieces, boardStates, currentTurn).length == 0) {declareLoss();}
       computermovesteps();
       drawBoard();
@@ -140,6 +144,7 @@ function makeMove(playfield, playstates, starti, startj, endi, endj) {
   PF[starti][startj] = -endNumber * discreteLog(startNumber, primes.cloner);
   PF[endi][endj] += discreteLog(startNumber, primes.increment) * Math.sign(startNumber);
   PF[endi][endj] = Math.ceil(Math.abs(PF[endi][endj]) / (primes.rounder ** discreteLog(startNumber, primes.rounder))) * (primes.rounder ** discreteLog(startNumber, primes.rounder)) * Math.sign(startNumber);
+  PS = PS.map(ah => ah.map(n => (n > 0 ? n-1 : n)));
   return [PF, PS];
 }
 
@@ -227,7 +232,6 @@ function clickedBoard(e) {
     if (isValidMove(boardPieces, boardStates, selectedLocation[0], selectedLocation[1], i, j)) {
       [boardPieces, boardStates] = makeMove(boardPieces, boardStates, selectedLocation[0], selectedLocation[1], i, j);
       currentTurn = currentTurn * -1;
-      beforemovesteps();
       if (findallValidMoves(boardPieces, boardStates, currentTurn).length == 0) {declareLoss();}
       computermovesteps();
       selectedLocation = [];
