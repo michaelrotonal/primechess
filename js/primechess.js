@@ -33,7 +33,8 @@ function resetGame() {
   timeser: P[6]
  }
  document.getElementById('consolePanel').innerHTML = 'Another game has started.'
- drawBoard();
+ beforemovesteps();
+ computermovesteps();
 }
 
 // i'm thinking negative numbers represent the opponent's pieces and positive numbers represent your pieces
@@ -43,16 +44,16 @@ boardDark.src = 'img/tiledk.png';
 const boardLight = new Image();
 boardLight.src = 'img/tilelt.png'; 
 
-function isValidMove(starti, startj, endi, endj) {
+function isValidMove(playfield, playstates, starti, startj, endi, endj) {
   if (starti == endi || startj == endj) {
-    if ((boardPieces[endi][endj] * boardPieces[starti][startj]) > 0) {
+    if ((playfield[endi][endj] * playfield[starti][startj]) > 0) {
       return false;
     } else {
-      if (boardStates[endi][endj] > 0) {
+      if (playstates[endi][endj] > 0) {
         return false;
       } else {
-        if (Math.abs(starti - endi) + Math.abs(startj - endj) < 2 + discreteLog(boardPieces[starti][startj], primes.mover)) {
-          if ((boardPieces[endi][endj] == 0) || (discreteLog(boardPieces[starti][startj], primes.uncable) >= discreteLog(boardPieces[endi][endj], primes.uncable))) {
+        if (Math.abs(starti - endi) + Math.abs(startj - endj) < 2 + discreteLog(playfield[starti][startj], primes.mover)) {
+          if ((playfield[endi][endj] == 0) || (discreteLog(playfield[starti][startj], primes.uncable) >= discreteLog(playfield[endi][endj], primes.uncable))) {
             return true;
           } else {
             return false;
@@ -78,22 +79,22 @@ function saveSettings() {
   document.getElementById("settingsDialog").close();
 }
 
-function isValidSelection(i, j) {
-  if (boardPieces[i][j] * currentTurn > 0) {
+function isValidSelection(playfield, turn, i, j) {
+  if (playfield[i][j] * turn > 0) {
     return true;
   } else {
     return false;
   }
 }
 
-function findallValidMoves() {
+function findallValidMoves(playfield, playstates, turn) {
   let toret = [];
   for (let i = 0; i < 8; i++) {
     for (let j = 0; j < 8; j++) {
-      if (isValidSelection(i, j)) {
+      if (isValidSelection(playfield, turn, i, j)) {
         for (let k = 0; k < 8; k++) {
           for (let l = 0; l < 8; l++) {
-            if (isValidMove(i, j, k, l)) {
+            if (isValidMove(playfield, playstates, i, j, k, l)) {
               toret.push([i, j, k, l]);
             }
           }
@@ -106,33 +107,40 @@ function findallValidMoves() {
 
 function beforemovesteps() {
   boardStates = boardStates.map(ah => ah.map(n => (n > 0 ? n-1 : n)));
+}
+
+function computermovesteps() {
   if (computer && (currentTurn == -1)) {
-    let h = findallValidMoves();
+    let h = findallValidMoves(boardPieces, boardStates, currentTurn);;
     if (h.length == 0) {
       declareLoss();
     } else {
       let q = h[Math.floor(Math.random() * h.length)]; // random move
-      makeMove(...q);
+      [boardPieces, boardStates] = makeMove(boardPieces, boardStates, ...q);
+      currentTurn = currentTurn * -1;
+      beforemovesteps();
+      if (findallValidMoves(boardPieces, boardStates, currentTurn).length == 0) {declareLoss();}
+      computermovesteps();
       drawBoard();
     }
   }
 }
 
-function makeMove(starti, startj, endi, endj) {
-  let startNumber = boardPieces[starti][startj]; 
-  let endNumber = boardPieces[endi][endj];
-  boardStates[starti][startj] = 2 * discreteLog(startNumber, primes.yellower);
-  if (startNumber % primes.timeser == 0 && boardPieces[endi][endj] != 0) {
-    boardPieces[endi][endj] = startNumber * Math.abs(boardPieces[endi][endj]);
+function makeMove(playfield, playstates, starti, startj, endi, endj) {
+  let PF = playfield.map(row => row.toSpliced());
+  let PS = playstates.map(row => row.toSpliced());
+  let startNumber = PF[starti][startj]; 
+  let endNumber = PF[endi][endj];
+  PS[starti][startj] = 2 * discreteLog(startNumber, primes.yellower);
+  if (startNumber % primes.timeser == 0 && PF[endi][endj] != 0) {
+    PF[endi][endj] = startNumber * Math.abs(PF[endi][endj]);
   } else {
-    boardPieces[endi][endj] = startNumber - boardPieces[endi][endj];
+    PF[endi][endj] = startNumber - PF[endi][endj];
   }
-  boardPieces[starti][startj] = -endNumber * discreteLog(startNumber, primes.cloner);
-  boardPieces[endi][endj] += discreteLog(startNumber, primes.increment) * Math.sign(startNumber);
-  boardPieces[endi][endj] = Math.ceil(Math.abs(boardPieces[endi][endj]) / (primes.rounder ** discreteLog(startNumber, primes.rounder))) * (primes.rounder ** discreteLog(startNumber, primes.rounder)) * Math.sign(startNumber);
-  currentTurn = currentTurn * -1;
-  beforemovesteps();
-  if (findallValidMoves().length == 0) {declareLoss();}
+  PF[starti][startj] = -endNumber * discreteLog(startNumber, primes.cloner);
+  PF[endi][endj] += discreteLog(startNumber, primes.increment) * Math.sign(startNumber);
+  PF[endi][endj] = Math.ceil(Math.abs(PF[endi][endj]) / (primes.rounder ** discreteLog(startNumber, primes.rounder))) * (primes.rounder ** discreteLog(startNumber, primes.rounder)) * Math.sign(startNumber);
+  return [PF, PS];
 }
 
 function declareLoss() {
@@ -216,8 +224,12 @@ function clickedBoard(e) {
       selectedLocation = [];
     }
   } else {
-    if (isValidMove(selectedLocation[0], selectedLocation[1], i, j)) {
-      makeMove(selectedLocation[0], selectedLocation[1], i, j);
+    if (isValidMove(boardPieces, boardStates, selectedLocation[0], selectedLocation[1], i, j)) {
+      [boardPieces, boardStates] = makeMove(boardPieces, boardStates, selectedLocation[0], selectedLocation[1], i, j);
+      currentTurn = currentTurn * -1;
+      beforemovesteps();
+      if (findallValidMoves(boardPieces, boardStates, currentTurn).length == 0) {declareLoss();}
+      computermovesteps();
       selectedLocation = [];
     } else {
       if (boardPieces[i][j] * currentTurn > 0 && (i != selectedLocation[0] || j != selectedLocation[1])) {
@@ -235,7 +247,7 @@ function clickedBoard(e) {
     document.getElementById("upperPanel").innerHTML = getDescription(boardPieces[selectedLocation[0]][selectedLocation[1]]);
     for (let ii = 0; ii < 8; ii++) {
       for (let jj = 0; jj < 8; jj++) {
-        if (isValidMove(selectedLocation[0], selectedLocation[1], ii, jj)) {
+        if (isValidMove(boardPieces, boardStates, selectedLocation[0], selectedLocation[1], ii, jj)) {
           drawSquare(ii, jj, greenOutline, greenInterior)
         }
       }
