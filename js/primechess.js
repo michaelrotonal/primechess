@@ -12,14 +12,15 @@ function toShuffled(array) {
 }
 let canvas, context;
 let currentTurn,boardPieces,boardStates,selectedLocation,primes;
-let computer = false;
+let lightplayertype = 'human';
+let darkplayertype = 'human';
 let chaosmode = false;
 function resetGame() {
  currentTurn = 1;
  boardPieces = [[-2,-1,0,0,0,0,1,2],[-3,-1,0,0,0,0,1,3],[-5,-1,0,0,0,0,1,5],[-7,-1,0,0,0,0,1,7],[-11,-1,0,0,0,0,1,11],[-5,-1,0,0,0,0,1,5],[-3,-1,0,0,0,0,1,3],[-2,-1,0,0,0,0,1,2]];
  boardStates = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]];
  selectedLocation = [];
- let P = [2,3,5,7,11,13,17];
+ let P = [2,3,5,7,11,13,17,19];
  if (chaosmode) {
   P = toShuffled(P);
  }
@@ -28,9 +29,10 @@ function resetGame() {
   mover: P[1],
   uncable: P[2], // uncapturable
   cloner: P[3],
-  increment: P[4],
-  rounder: P[5],
-  timeser: P[6]
+  increment: P[5],
+  rounder: P[6],
+  timeser: P[7],
+  immune: P[4]
  }
  document.getElementById('consolePanel').innerHTML = 'Another game has started.'
  computermovesteps();
@@ -48,7 +50,7 @@ function isValidMove(playfield, playstates, starti, startj, endi, endj) {
     if ((playfield[endi][endj] * playfield[starti][startj]) > 0) {
       return false;
     } else {
-      if (playstates[endi][endj] > 0) {
+      if (playstates[endi][endj] > 0 && (playfield[starti][startj] % primes.immune != 0)) {
         return false;
       } else {
         if (Math.abs(starti - endi) + Math.abs(startj - endj) < 2 + discreteLog(playfield[starti][startj], primes.mover)) {
@@ -72,7 +74,8 @@ function showSettings() {
 }
 
 function saveSettings() {
-  computer = document.getElementById("computerPlays").checked;
+  lightplayertype = document.getElementById("whitePlayer").value;
+  darkplayertype = document.getElementById("blackPlayer").value;
   chaosmode = document.getElementById("chaosMode").checked;
   resetGame();
   document.getElementById("settingsDialog").close();
@@ -105,23 +108,36 @@ function findallValidMoves(playfield, playstates, turn) {
 }
 
 function computermovesteps() {
-  if (computer && (currentTurn == -1)) {
+  let m;
+  if (currentTurn == 1) {
+    m = lightplayertype;
+  } else {
+    m = darkplayertype;
+  }
+  if (m != "human") {
     let h = findallValidMoves(boardPieces, boardStates, currentTurn);;
     if (h.length == 0) {
       declareLoss();
     } else {
-      let minmovescount = Infinity;
-      let minmovesmove;
-      let X = toShuffled(h);
-      for (let i = 0; i < h.length; i++) {
-        let q = X[i]; // random move
-        let t = findallValidMoves(...makeMove(boardPieces, boardStates, ...q), -currentTurn).length; // number of moves for you. sorry this computer actually knows what it's doing a little bit
-        if (t < minmovescount) {
-          minmovesmove = q;
-          minmovescount = t;
+      let choice;
+      if (m == "computer") {
+        let minmovescount = Infinity;
+        let minmovesmove;
+        let X = toShuffled(h);
+        for (let i = 0; i < h.length; i++) {
+          let q = X[i]; // random move
+          let j = makeMove(boardPieces, boardStates, ...q);
+          let t = findallValidMoves(...j, -currentTurn).length + (1/findallValidMoves(...j, currentTurn).length); // its first priority is preventing you from doing stuff. its second priority is letting itself do more stuff.
+          if (t < minmovescount) {
+            minmovesmove = q;
+            minmovescount = t;
+          }
         }
+        choice = minmovesmove;
+      } else {
+        choice = h[Math.floor(Math.random()*h.length)];
       }
-      [boardPieces, boardStates] = makeMove(boardPieces, boardStates, ...minmovesmove);
+      [boardPieces, boardStates] = makeMove(boardPieces, boardStates, ...choice);
       currentTurn = currentTurn * -1;
       if (findallValidMoves(boardPieces, boardStates, currentTurn).length == 0) {declareLoss();}
       computermovesteps();
@@ -189,13 +205,15 @@ function getPrimeDescription(number, prime, power) {
     case primes.cloner:
       return 'Leaves behind a clone of any piece it captures. ';
     case primes.mover:
-      return 'Can move up to ' + power + ' additional squares. ';
+      return 'Can move up to ' + power + ' additional square' + (power > 1 ? 's' : '') + '. ';
     case primes.uncable:
       return 'Cannot be captured by a piece with fewer than ' + power + ' factors of ' + primes.uncable + '. '
     case primes.rounder:
       return 'Rounds up to the nearest multiple of ' + prime ** power + ' after moving. '
     case primes.timeser:
       return 'When capturing, multiplies by the piece it takes instead of adding. '
+    case primes.immune:
+      return 'Can use squares made unusable by ' + primes.yellower + '. '
     default:
       if (power == 1) {
         return 'Has a useless factor of ' + prime + '. ';
