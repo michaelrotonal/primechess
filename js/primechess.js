@@ -315,7 +315,7 @@ function drawBoard() {
           context.fillText(Math.abs(boardPieces[i][j]) + '', (i+0.5)*tile, (j+0.5)*tile);
         } else {
           let stone = new Image();
-          stone.src = 'img/stone_' + (boardPieces[i][j]) + '.png';
+          stone.src = 'img/stone_' + (boardPieces[i][j] < 0 ? 'dk' : '') + Math.abs(boardPieces[i][j]) + '.png';
           context.drawImage(stone, i*tile, j*tile, tile, tile);
         }
       }
