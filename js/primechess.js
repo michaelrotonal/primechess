@@ -308,7 +308,7 @@ function drawBoard() {
         drawSquare(i, j, '#FFE40000', '#FFE40022')
       }
       if(boardPieces[i][j] != 0) {
-        if (Math.abs(boardPieces[i][j]) > 1) {
+        if (Math.abs(boardPieces[i][j]) > 2) { // default for if the stone is bigger than we have images for
           context.textAlign = "center";
           context.fillStyle = (boardPieces[i][j] > 0) ? 'white' : 'black'
           context.font = tile / 3 + "px sans-serif"
