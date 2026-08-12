@@ -308,10 +308,16 @@ function drawBoard() {
         drawSquare(i, j, '#FFE40000', '#FFE40022')
       }
       if(boardPieces[i][j] != 0) {
-        context.textAlign = "center";
-        context.fillStyle = (boardPieces[i][j] > 0) ? 'white' : 'black'
-        context.font = tile / 3 + "px sans-serif"
-        context.fillText(Math.abs(boardPieces[i][j]) + '', (i+0.5)*tile, (j+0.5)*tile);
+        if (Math.abs(boardPieces[i][j]) > 1) {
+          context.textAlign = "center";
+          context.fillStyle = (boardPieces[i][j] > 0) ? 'white' : 'black'
+          context.font = tile / 3 + "px sans-serif"
+          context.fillText(Math.abs(boardPieces[i][j]) + '', (i+0.5)*tile, (j+0.5)*tile);
+        } else {
+          let stone = new Image();
+          stone.src = 'img/stone_' + (boardPieces[i][j]) + '.png';
+          context.drawImage(stone, i*tile, j*tile, tile, tile);
+        }
       }
     }
   }  
