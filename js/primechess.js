@@ -140,8 +140,8 @@ function computermovesteps() {
       [boardPieces, boardStates] = makeMove(boardPieces, boardStates, ...choice);
       currentTurn = currentTurn * -1;
       if (findallValidMoves(boardPieces, boardStates, currentTurn).length == 0) {declareLoss();}
-      computermovesteps();
       drawBoard();
+      computermovesteps();
     }
   }
 }
