@@ -20,7 +20,7 @@ function resetGame() {
  boardPieces = [[-2,-1,0,0,0,0,1,2],[-3,-1,0,0,0,0,1,3],[-5,-1,0,0,0,0,1,5],[-7,-1,0,0,0,0,1,7],[-11,-1,0,0,0,0,1,11],[-5,-1,0,0,0,0,1,5],[-3,-1,0,0,0,0,1,3],[-2,-1,0,0,0,0,1,2]];
  boardStates = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]];
  selectedLocation = [];
- let P = [2,3,5,7,11,13,17,19];
+ let P = [2,3,5,7,11,13,17,19,23,29,31]; // There is one more prime in this list than is defined in the primes object later. This is so that Chaos Mode also has a useless prime in the mix.
  if (chaosmode) {
   P = toShuffled(P);
  }
@@ -30,9 +30,11 @@ function resetGame() {
   uncable: P[2], // uncapturable
   cloner: P[3],
   increment: P[5],
-  rounder: P[6],
-  timeser: P[7],
-  immune: P[4]
+  rounder: P[7],
+  timeser: P[8],
+  immune: P[4],
+  creator: P[9],
+  anywhere: P[6] // This used to be able to go anywhere before I nerfed it
  }
  document.getElementById('consolePanel').innerHTML = 'Another game has started.'
  computermovesteps();
@@ -46,14 +48,14 @@ const boardLight = new Image();
 boardLight.src = 'img/tilelt.png'; 
 
 function isValidMove(playfield, playstates, starti, startj, endi, endj) {
-  if (starti == endi || startj == endj) {
+  if (starti == endi || startj == endj || playfield[starti][startj] % primes.anywhere == 0) {
     if ((playfield[endi][endj] * playfield[starti][startj]) > 0) {
       return false;
     } else {
       if (playstates[endi][endj] > 0 && (playfield[starti][startj] % primes.immune != 0)) {
         return false;
       } else {
-        if (Math.abs(starti - endi) + Math.abs(startj - endj) < 2 + discreteLog(playfield[starti][startj], primes.mover)) {
+        if (Math.max(Math.abs(starti - endi), Math.abs(startj - endj)) < 2 + discreteLog(playfield[starti][startj], primes.mover)) {
           if ((playfield[endi][endj] == 0) || (discreteLog(playfield[starti][startj], primes.uncable) >= discreteLog(playfield[endi][endj], primes.uncable))) {
             return true;
           } else {
@@ -158,6 +160,7 @@ function makeMove(playfield, playstates, starti, startj, endi, endj) {
     PF[endi][endj] = startNumber - PF[endi][endj];
   }
   PF[starti][startj] = -endNumber * discreteLog(startNumber, primes.cloner);
+  PF[starti][startj] += Math.sign(startNumber) * discreteLog(startNumber, primes.creator);
   PF[endi][endj] += discreteLog(startNumber, primes.increment) * Math.sign(startNumber);
   PF[endi][endj] = Math.ceil(Math.abs(PF[endi][endj]) / (primes.rounder ** discreteLog(startNumber, primes.rounder))) * (primes.rounder ** discreteLog(startNumber, primes.rounder)) * Math.sign(startNumber);
   PS = PS.map(ah => ah.map(n => (n > 0 ? n-1 : n)));
@@ -170,7 +173,7 @@ function declareLoss() {
 
 function discreteLog(number, prime) { // How many times can the number be divided by the prime?
   if (number == 0) {
-    return Infinity; // If you ever get a piece that is worth zero, Good Luck.
+    return Infinity; // shouldn't happen, but just in case
   } else {
     let i = 0;
     while (number % prime ** (i + 1) == 0) {
@@ -203,7 +206,7 @@ function getPrimeDescription(number, prime, power) {
     case primes.increment:
       return 'Increases by ' + power + ' after moving. ';
     case primes.cloner:
-      return 'Leaves behind a clone of any piece it captures. ';
+      return 'Leaves behind a clone' + (power > 1 ? (' (multiplied by ' + power + ')') : '') + ' of any piece it captures. ';
     case primes.mover:
       return 'Can move up to ' + power + ' additional square' + (power > 1 ? 's' : '') + '. ';
     case primes.uncable:
@@ -211,9 +214,13 @@ function getPrimeDescription(number, prime, power) {
     case primes.rounder:
       return 'Rounds up to the nearest multiple of ' + prime ** power + ' after moving. '
     case primes.timeser:
-      return 'When capturing, multiplies by the piece it takes instead of adding. '
+      return 'When capturing, multiplies by the piece it takes instead of adding' + (power > 1 ? (' (Sorry, no additional effects for ' + prime + '^' + power + ')') : '') + '. '
     case primes.immune:
       return 'Can use squares made unusable by ' + primes.yellower + '. '
+    case primes.anywhere:
+      return 'Can move in non-orthogonal directions. '
+    case primes.creator:
+      return 'Leaves behind a ' + power + ' when it moves. '
     default:
       if (power == 1) {
         return 'Has a useless factor of ' + prime + '. ';
@@ -240,7 +247,7 @@ function clickedBoard(e) {
   let greenOutline = "#005511";
   let greenInterior = "#00ff0011"; 
 
-  if (selectedLocation == []) {
+  if (selectedLocation.length == 0) {
     if (boardPieces[i][j] * currentTurn > 0) {
       selectedLocation = [i, j];
     } else {
